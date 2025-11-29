@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Roue Pokémon - Style HOME Pokéball</title>
+
+<!-- Police pixel lisible -->
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================
+   🔒 PATCH ANTI-DARK MODE (Samsung, Android, iPhone, Chrome)
+   Empêche TOUTE recolorisation automatique du thème
+========================================================= */
+:root {
+  color-scheme: light !important;
+  forced-color-adjust: none !important;
+}
+
+html, body {
+  background-color: #f2f9f4 !important;
+  color: #003366 !important;
+  forced-color-adjust: none !important;
+}
+
+/* Empêche la recoloration automatique des SVG/textes */
+* {
+  -webkit-text-size-adjust: none !important;
+  color-scheme: light !important;
+  forced-color-adjust: none !important;
+}
+
+/* =========================================================
+   STYLE DE LA ROUE
+========================================================= */
+body {
+  margin: 0;
+  font-family: "VT323", monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+#chart {
+  width: min(80vmin, 520px);
+  height: min(80vmin, 520px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  position: relative;
+
+  /* halo pastel */
+  box-shadow:
+    0 0 20px rgba(255,255,255,0.9),
+    0 0 40px rgba(255,255,255,0.6),
+    0 0 80px rgba(210,240,255,0.4);
+}
+
+#chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+text.segment-label {
+  font-family: "VT323", monospace;
+  font-size: 22px;
+  fill: #003366; /* texte lisible bleu foncé */
+  pointer-events: none;
+}
+
+#spinBtn {
+  margin-top: 25px;
+  padding: 10px 30px;
+  font-size: 22px;
+  background: #FFF6CE;
+  border: 3px solid #E6D37A;
+  color: #003366;
+  cursor: pointer;
+  border-radius: 10px;
+  box-shadow: 0 3px 4px rgba(0,0,0,0.15);
+}
+
+#spinBtn:hover {
+  background: #fff9d8;
+}
+
+#result {
+  margin-top: 18px;
+  font-size: 26px;
+}
+</style>
+</head>
+
+<body>
+
+<h1 style="font-size:28px; margin-bottom:15px;">Roue Pokémon</h1>
+
+<div id="chart"></div>
+
+<button id="spinBtn">TOURNER</button>
+
+<div id="result"></div>
+
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
+<script>
+/* =========================================================
+   CONFIG COULEURS PASTEL STYLE POKÉMON HOME
+========================================================= */
+var data = [
+  { label: "COMMUNE",  question: "1 carte commune", weight: 60,  color: "#DDF7E2" },
+  { label: "JUMBO",    question: "1 carte Jumbo",   weight: 25,  color: "#E8F8FF" },
+  { label: "HOLO",     question: "1 Holo",          weight: 7,   color: "#FFF6CE" },
+  { label: "EX",       question: "1 EX",            weight: 2.5, color: "#FFE6CF" },
+  { label: "AR",       question: "1 AR",            weight: 2.5, color: "#DDE6FF" },
+  { label: "MYSTERE",  question: "1 pack mystère",  weight: 2.5, color: "#FFFFFF" },
+  { label: "-20%",     question: "-20% réduction",  weight: 0.5, color: "#E6E6E6" }
+];
+
+var totalWeight = data.reduce((a,b)=>a+b.weight,0);
+
+var w=520,h=520,r=230;
+
+var svg=d3.select("#chart").append("svg")
+  .attr("viewBox","0 0 520 520");
+
+var container=svg.append("g")
+  .attr("transform","translate(260,260)");
+
+var vis=container.append("g");
+
+var pie=d3.layout.pie().sort(null).value(()=>1);
+
+var arc=d3.svg.arc().outerRadius(r).innerRadius(90);
+
+/* =========================================================
+   SEGMENTS
+========================================================= */
+var arcs=vis.selectAll("g.slice")
+  .data(pie(data))
+  .enter()
+  .append("g")
+  .attr("class","slice");
+
+arcs.append("path")
+  .attr("fill",(d,i)=>data[i].color)
+  .attr("stroke","#FFFFFF")
+  .attr("stroke-width",3)
+  .attr("d",arc);
+
+/* =========================================================
+   TEXTE VERTICAL A1
+========================================================= */
+arcs.append("text")
+  .attr("class","segment-label")
+  .attr("text-anchor","middle")
+  .attr("transform",function(d){
+
+    var angle = (d.startAngle + d.endAngle)/2;
+    var radius = r - 35;
+
+    var x = Math.cos(angle - Math.PI/2)*radius;
+    var y = Math.sin(angle - Math.PI/2)*radius;
+
+    var rotate = angle*180/Math.PI;
+
+    return "translate("+x+","+y+") rotate("+rotate+")";
+  })
+  .text((d,i)=>data[i].label.split("").join("\n"));
+
+/* =========================================================
+   POINTEUR
+========================================================= */
+svg.append("polygon")
+  .attr("points","515,250 480,260 515,270")
+  .attr("fill","#FFFFFF")
+  .attr("stroke","#A8C6E5")
+  .attr("stroke-width",3);
+
+/* =========================================================
+   POKÉBALL CENTRALE
+========================================================= */
+var ball = container.append("g");
+
+ball.append("circle")
+  .attr("r",85)
+  .attr("fill","#FFFFFF")
+  .attr("stroke","#FFD86B")
+  .attr("stroke-width",4)
+  .style("filter","drop-shadow(0 0 10px rgba(255,240,180,0.8))");
+
+ball.append("path")
+  .attr("d",d3.svg.arc()
+    .innerRadius(0)
+    .outerRadius(85)
+    .startAngle(-Math.PI/2)
+    .endAngle(Math.PI/2*-1))
+  .attr("fill","#FF8C8C")
+  .attr("stroke","#FFD86B")
+  .attr("stroke-width",2);
+
+ball.append("rect")
+  .attr("x",-85)
+  .attr("y",-8)
+  .attr("width",170)
+  .attr("height",16)
+  .attr("fill","#003366");
+
+ball.append("circle")
+  .attr("r",25)
+  .attr("fill","#FFFFFF")
+  .attr("stroke","#003366")
+  .attr("stroke-width",4);
+
+ball.append("circle")
+  .attr("r",12)
+  .attr("fill","#FFF6CE")
+  .attr("stroke","#003366")
+  .attr("stroke-width",2);
+
+/* =========================================================
+   SPIN LOGIC
+========================================================= */
+var spinning=false;
+var oldrotation=0;
+var ps=360/data.length;
+
+function pickWeightedIndex(){
+  let rnd=Math.random()*totalWeight;
+  for(let i=0;i<data.length;i++){
+    if(rnd<data[i].weight) return i;
+    rnd-=data[i].weight;
+  }
+  return data.length-1;
+}
+
+function spin(){
+  if(spinning) return;
+  spinning=true;
+  document.getElementById("result").textContent="";
+
+  var picked=pickWeightedIndex();
+
+  var base=(data.length-picked)*ps;
+  var extra=360*(3+Math.floor(Math.random()*3));
+  var rotation=base+extra;
+
+  rotation += 90 - ps/2;
+
+  vis.transition()
+    .duration(6000)
+    .attrTween("transform",function(){
+      var i=d3.interpolate(oldrotation%360,rotation);
+      return t=>"rotate("+i(t)+")";
+    })
+    .each("end",function(){
+      oldrotation=rotation;
+      spinning=false;
+      document.getElementById("result").textContent=data[picked].question;
+    });
+}
+
+document.getElementById("spinBtn").addEventListener("click",spin);
+</script>
+
+</body>
+</html>
